@@ -5,18 +5,35 @@ import prisma from '@/lib/prisma';
 
 export async function GET() {
   try {
+    // Check database connection
+    try {
+      await prisma.$connect();
+      console.log('Database connection successful');
+    } catch (dbError) {
+      console.error('Database connection error:', dbError);
+      return new NextResponse(
+        JSON.stringify({ error: 'Database connection failed', details: dbError.message }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     const session = await getServerSession(authOptions);
     if (!session) {
+      console.log('No session found');
       return new NextResponse(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
+    console.log('Fetching stats for user:', session.user.id);
+
     // Get current month's start and end dates
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    console.log('Date range:', { startOfMonth, endOfMonth });
 
     // Fetch transactions for the current month
     const transactions = await prisma.transaction.findMany({
@@ -28,6 +45,8 @@ export async function GET() {
         }
       }
     });
+
+    console.log('Found transactions:', transactions.length);
 
     // Calculate statistics
     const totalExpenses = transactions
@@ -52,6 +71,8 @@ export async function GET() {
       }
     });
 
+    console.log('Found last 3 months transactions:', lastThreeMonthsTransactions.length);
+
     const monthlyExpenses = {};
     lastThreeMonthsTransactions.forEach(t => {
       const month = t.date.toISOString().slice(0, 7); // YYYY-MM
@@ -70,20 +91,30 @@ export async function GET() {
       ? monthlyAverages.reduce((a, b) => a + b, 0) / monthlyAverages.length
       : 0;
 
+    const stats = {
+      totalExpenses: totalExpenses.toFixed(2),
+      totalIncome: totalIncome.toFixed(2),
+      savings: savings.toFixed(2),
+      monthlyAverage: monthlyAverage.toFixed(2)
+    };
+
+    console.log('Calculated stats:', stats);
+
     return new NextResponse(
-      JSON.stringify({
-        totalExpenses: totalExpenses.toFixed(2),
-        totalIncome: totalIncome.toFixed(2),
-        savings: savings.toFixed(2),
-        monthlyAverage: monthlyAverage.toFixed(2)
-      }),
+      JSON.stringify(stats),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Error fetching stats:', error);
+    console.error('Error in stats API:', error);
     return new NextResponse(
-      JSON.stringify({ error: 'Failed to fetch statistics' }),
+      JSON.stringify({ 
+        error: 'Failed to fetch statistics',
+        details: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 } 

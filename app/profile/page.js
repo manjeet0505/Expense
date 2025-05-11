@@ -29,16 +29,27 @@ export default function ProfilePage() {
 
         // Fetch stats
         const statsResponse = await fetch('/api/stats');
-        if (!statsResponse.ok) throw new Error('Failed to fetch stats');
+        if (!statsResponse.ok) {
+          const errorData = await statsResponse.json();
+          console.error('Stats API error:', errorData);
+          throw new Error(errorData.error || 'Failed to fetch stats');
+        }
         const statsData = await statsResponse.json();
+        console.log('Stats data:', statsData);
         setStats(statsData);
 
         // Fetch recent transactions
         const transactionsResponse = await fetch('/api/transactions/recent');
-        if (!transactionsResponse.ok) throw new Error('Failed to fetch transactions');
+        if (!transactionsResponse.ok) {
+          const errorData = await transactionsResponse.json();
+          console.error('Transactions API error:', errorData);
+          throw new Error(errorData.error || 'Failed to fetch transactions');
+        }
         const transactionsData = await transactionsResponse.json();
+        console.log('Transactions data:', transactionsData);
         setRecentTransactions(transactionsData);
       } catch (err) {
+        console.error('Error fetching data:', err);
         setError(err.message);
       } finally {
         setLoading(false);
