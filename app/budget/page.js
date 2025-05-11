@@ -28,6 +28,22 @@ export default function BudgetPage() {
     month: new Date().toISOString().slice(0, 7),
     notes: ''
   });
+  const [stats, setStats] = useState(null);
+  const [budgetSummary, setBudgetSummary] = useState(null);
+
+  // Fetch stats and budget summary
+  const fetchStatsAndBudget = async () => {
+    try {
+      const [statsRes, budgetRes] = await Promise.all([
+        fetch('/api/stats'),
+        fetch('/api/budget')
+      ]);
+      if (statsRes.ok) setStats(await statsRes.json());
+      if (budgetRes.ok) setBudgetSummary(await budgetRes.json());
+    } catch (error) {
+      console.error('Error fetching stats/budget:', error);
+    }
+  };
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -87,7 +103,16 @@ export default function BudgetPage() {
   useEffect(() => {
     fetchBudgets();
     fetchExpenses();
+    fetchStatsAndBudget();
   }, []);
+
+  // Real-time updates
+  useEffect(() => {
+    if (status === 'authenticated') {
+      const interval = setInterval(fetchStatsAndBudget, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [status]);
 
   useEffect(() => {
     checkBudgetAlerts();
@@ -112,6 +137,7 @@ export default function BudgetPage() {
           notes: ''
         });
         setShowAddForm(false);
+        fetchStatsAndBudget(); // Re-fetch summary data
       }
     } catch (error) {
       console.error('Error adding budget:', error);
@@ -145,8 +171,8 @@ export default function BudgetPage() {
   });
 
   // Calculate total spent, total budget, and remaining using budgetTrackers
-  const totalSpent = budgetTrackers.reduce((sum, b) => sum + b.spent, 0);
-  const totalBudget = budgetTrackers.reduce((sum, b) => sum + b.amount, 0);
+  const totalSpent = stats?.totalExpenses || 0;
+  const totalBudget = budgetSummary?.amount || 0;
   const remaining = totalBudget - totalSpent;
 
   const summary = [

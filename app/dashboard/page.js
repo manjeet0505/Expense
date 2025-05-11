@@ -48,14 +48,39 @@ export default function Dashboard() {
   const [budgets, setBudgets] = useState([]);
   const { user } = useContext(UserContext);
   const { status } = useSession();
+  const [stats, setStats] = useState(null);
+  const [budgetSummary, setBudgetSummary] = useState(null);
+
+  // Fetch stats and budget summary
+  const fetchStatsAndBudget = async () => {
+    try {
+      const [statsRes, budgetRes] = await Promise.all([
+        fetch('/api/stats'),
+        fetch('/api/budget')
+      ]);
+      if (statsRes.ok) setStats(await statsRes.json());
+      if (budgetRes.ok) setBudgetSummary(await budgetRes.json());
+    } catch (error) {
+      console.error('Error fetching stats/budget:', error);
+    }
+  };
 
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/auth/login');
     } else if (status === 'authenticated') {
       setLoading(false);
+      fetchStatsAndBudget();
     }
   }, [status, router]);
+
+  // Real-time updates
+  useEffect(() => {
+    if (status === 'authenticated') {
+      const interval = setInterval(fetchStatsAndBudget, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [status]);
 
   useEffect(() => {
     fetchExpenses();
@@ -105,14 +130,13 @@ export default function Dashboard() {
           paymentMethod: 'Cash'
         });
         setShowAddForm(false);
+        fetchStatsAndBudget(); // Re-fetch summary data
       } else {
         const error = await res.json();
         console.error('Error adding expense:', error);
-        // You might want to show an error message to the user here
       }
     } catch (error) {
       console.error('Error adding expense:', error);
-      // You might want to show an error message to the user here
     }
   };
 
@@ -124,6 +148,7 @@ export default function Dashboard() {
 
       if (res.ok) {
         setExpenses(expenses.filter(expense => expense._id !== id));
+        fetchStatsAndBudget(); // Re-fetch summary data
       }
     } catch (error) {
       console.error('Error deleting expense:', error);
@@ -138,20 +163,19 @@ export default function Dashboard() {
     );
   }
 
-  const totalIncome = expenses
-    .filter(expense => expense.type === 'income')
-    .reduce((sum, expense) => sum + expense.amount, 0);
-
-  const totalExpenses = expenses
-    .filter(expense => expense.type === 'expense')
-    .reduce((sum, expense) => sum + expense.amount, 0);
+  // Use stats and budgetSummary for summary cards
+  const totalBalance = stats?.totalBalance || 0;
+  const totalIncome = stats?.totalIncome || 0;
+  const totalExpenses = stats?.totalExpenses || 0;
+  const monthlyBudget = budgetSummary?.amount || 0;
+  const thisMonth = stats?.thisMonth || 0;
 
   const balance = totalIncome - totalExpenses;
 
-  const stats = [
+  const statsData = [
     {
       title: "Total Balance",
-      value: "$" + balance.toFixed(2),
+      value: "$" + totalBalance.toFixed(2),
       change: "+12.5%",
       trend: "up",
       icon: <WalletIcon className="w-6 h-6" />,
@@ -363,7 +387,7 @@ export default function Dashboard() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, index) => (
+          {statsData.map((stat, index) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 20 }}
