@@ -5,7 +5,6 @@ import { Suspense } from 'react';
 
 // Add dynamic configuration
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 function ErrorContent() {
   const searchParams = useSearchParams();

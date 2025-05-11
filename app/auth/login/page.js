@@ -7,7 +7,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 // Add dynamic configuration
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 function LoginContent() {
   const [isLoading, setIsLoading] = useState(false);
