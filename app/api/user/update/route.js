@@ -11,13 +11,23 @@ export async function PUT(req) {
     }
 
     const { name } = await req.json();
-    if (!name) {
+    if (!name || name.trim().length === 0) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
 
+    // Check if user exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
+
+    if (!existingUser) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Update user
     const updatedUser = await prisma.user.update({
       where: { email: session.user.email },
-      data: { name },
+      data: { name: name.trim() },
     });
 
     return NextResponse.json({
@@ -30,7 +40,7 @@ export async function PUT(req) {
   } catch (error) {
     console.error('Error updating profile:', error);
     return NextResponse.json(
-      { error: 'Failed to update profile' },
+      { error: 'Failed to update profile. Please try again.' },
       { status: 500 }
     );
   }

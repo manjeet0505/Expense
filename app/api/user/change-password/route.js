@@ -12,9 +12,18 @@ export async function PUT(req) {
     }
 
     const { currentPassword, newPassword } = await req.json();
+    
+    // Validate input
     if (!currentPassword || !newPassword) {
       return NextResponse.json(
         { error: 'Current password and new password are required' },
+        { status: 400 }
+      );
+    }
+
+    if (newPassword.length < 6) {
+      return NextResponse.json(
+        { error: 'New password must be at least 6 characters long' },
         { status: 400 }
       );
     }
@@ -27,6 +36,13 @@ export async function PUT(req) {
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    if (!user.password) {
+      return NextResponse.json(
+        { error: 'Password change not available for this account' },
+        { status: 400 }
+      );
     }
 
     // Verify current password
@@ -53,7 +69,7 @@ export async function PUT(req) {
   } catch (error) {
     console.error('Error changing password:', error);
     return NextResponse.json(
-      { error: 'Failed to change password' },
+      { error: 'Failed to change password. Please try again.' },
       { status: 500 }
     );
   }
