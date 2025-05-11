@@ -5,6 +5,18 @@ import prisma from '@/lib/prisma';
 
 export async function GET() {
   try {
+    // Check for required environment variables
+    if (!process.env.MONGODB_URI) {
+      console.error('MONGODB_URI is not set');
+      return new NextResponse(
+        JSON.stringify({ 
+          error: 'Database configuration error',
+          details: 'MONGODB_URI environment variable is not set'
+        }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Check database connection
     try {
       await prisma.$connect();
@@ -12,7 +24,10 @@ export async function GET() {
     } catch (dbError) {
       console.error('Database connection error:', dbError);
       return new NextResponse(
-        JSON.stringify({ error: 'Database connection failed', details: dbError.message }),
+        JSON.stringify({ 
+          error: 'Database connection failed',
+          details: dbError.message
+        }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
       );
     }
