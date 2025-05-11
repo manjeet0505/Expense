@@ -1,375 +1,260 @@
 'use client';
-import { useState, useEffect, useContext } from 'react';
-import { useSession, signOut } from 'next-auth/react';
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { UserContext } from '../../context/UserContext';
-import { 
-  ArrowLeftOnRectangleIcon, 
-  KeyIcon,
-  ChartBarIcon,
-  ClockIcon,
-  Cog6ToothIcon,
-  BellIcon,
-  ShieldCheckIcon,
-  CreditCardIcon
-} from '@heroicons/react/24/outline';
+import { signOut } from 'next-auth/react';
+import { FiUser, FiSettings, FiLogOut, FiCreditCard, FiBell, FiHelpCircle, FiShield } from 'react-icons/fi';
+import { format } from 'date-fns';
 
 export default function ProfilePage() {
-  const { data: session, status, update } = useSession();
-  const { user, setUser } = useContext(UserContext);
+  const { data: session, status } = useSession();
   const router = useRouter();
-  const [showPassword, setShowPassword] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showSecurity, setShowSecurity] = useState(false);
-  const [passwordForm, setPasswordForm] = useState({ newPassword: '', confirm: '' });
-  const [message, setMessage] = useState({ type: '', text: '' });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [stats, setStats] = useState({
-    totalExpenses: 0,
-    totalIncome: 0,
-    savings: 0,
-    monthlyAverage: 0
-  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [stats, setStats] = useState(null);
   const [recentTransactions, setRecentTransactions] = useState([]);
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push('/auth/login');
+      router.push('/login');
     }
   }, [status, router]);
 
   useEffect(() => {
-    // Fetch user statistics
-    const fetchStats = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch('/api/stats');
-        if (response.ok) {
-          const data = await response.json();
-          setStats(data);
-        }
-      } catch (error) {
-        console.error('Error fetching stats:', error);
+        setLoading(true);
+        setError(null);
+
+        // Fetch stats
+        const statsResponse = await fetch('/api/stats');
+        if (!statsResponse.ok) throw new Error('Failed to fetch stats');
+        const statsData = await statsResponse.json();
+        setStats(statsData);
+
+        // Fetch recent transactions
+        const transactionsResponse = await fetch('/api/transactions/recent');
+        if (!transactionsResponse.ok) throw new Error('Failed to fetch transactions');
+        const transactionsData = await transactionsResponse.json();
+        setRecentTransactions(transactionsData);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
       }
     };
 
-    // Fetch recent transactions
-    const fetchRecentTransactions = async () => {
-      try {
-        const response = await fetch('/api/transactions/recent');
-        if (response.ok) {
-          const data = await response.json();
-          setRecentTransactions(data);
-        }
-      } catch (error) {
-        console.error('Error fetching transactions:', error);
-      }
-    };
+    if (session) {
+      fetchData();
+    }
+  }, [session]);
 
-    fetchStats();
-    fetchRecentTransactions();
-  }, []);
+  const handleSignOut = async () => {
+    await signOut({ redirect: false });
+    router.push('/login');
+  };
+
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="text-center text-red-500 p-4">
+          <p>Error: {error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-2 text-blue-500 hover:text-blue-600"
+          >
+            Try Again
+          </button>
+        </div>
+      );
+    }
+
+    switch (activeTab) {
+      case 'overview':
+        return (
+          <div className="space-y-6">
+            {/* Account Statistics */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-xl font-semibold mb-4">Account Overview</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <p className="text-sm text-blue-600">Total Expenses</p>
+                  <p className="text-2xl font-bold">${stats?.totalExpenses || 0}</p>
+                </div>
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <p className="text-sm text-green-600">Total Income</p>
+                  <p className="text-2xl font-bold">${stats?.totalIncome || 0}</p>
+                </div>
+                <div className="bg-purple-50 p-4 rounded-lg">
+                  <p className="text-sm text-purple-600">Savings</p>
+                  <p className="text-2xl font-bold">${stats?.savings || 0}</p>
+                </div>
+                <div className="bg-yellow-50 p-4 rounded-lg">
+                  <p className="text-sm text-yellow-600">Monthly Average</p>
+                  <p className="text-2xl font-bold">${stats?.monthlyAverage || 0}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Transactions */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-xl font-semibold mb-4">Recent Transactions</h2>
+              <div className="space-y-4">
+                {recentTransactions.map((transaction) => (
+                  <div key={transaction.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium">{transaction.description}</p>
+                      <p className="text-sm text-gray-500">{transaction.category}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className={`font-semibold ${transaction.type === 'expense' ? 'text-red-600' : 'text-green-600'}`}>
+                        {transaction.type === 'expense' ? '-' : '+'}${transaction.amount}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {format(new Date(transaction.date), 'MMM d, yyyy')}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'settings':
+        return (
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold mb-4">Account Settings</h2>
+            <div className="space-y-4">
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <h3 className="font-medium mb-2">Email Notifications</h3>
+                <p className="text-sm text-gray-600 mb-4">Manage your email notification preferences</p>
+                <button className="text-blue-600 hover:text-blue-700">Configure</button>
+              </div>
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <h3 className="font-medium mb-2">Security Settings</h3>
+                <p className="text-sm text-gray-600 mb-4">Update your password and security preferences</p>
+                <button className="text-blue-600 hover:text-blue-700">Update</button>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'help':
+        return (
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold mb-4">Help & Support</h2>
+            <div className="space-y-4">
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <h3 className="font-medium mb-2">FAQs</h3>
+                <p className="text-sm text-gray-600 mb-4">Find answers to common questions</p>
+                <button className="text-blue-600 hover:text-blue-700">View FAQs</button>
+              </div>
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <h3 className="font-medium mb-2">Contact Support</h3>
+                <p className="text-sm text-gray-600 mb-4">Get help from our support team</p>
+                <button className="text-blue-600 hover:text-blue-700">Contact Us</button>
+              </div>
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
 
   if (status === 'loading') {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
   }
-
-  if (!user) {
-    return null;
-  }
-
-  // Change password logic
-  const handlePasswordUpdate = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage('');
-    setError('');
-    if (passwordForm.newPassword !== passwordForm.confirm) {
-      setError('Passwords do not match');
-      setLoading(false);
-      return;
-    }
-    try {
-      const res = await fetch('/api/profile/password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          oldPassword: '',
-          newPassword: passwordForm.newPassword,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Password update failed');
-      setMessage({ type: 'success', text: 'Password updated successfully!' });
-      setPasswordForm({ newPassword: '', confirm: '' });
-      setShowPassword(false);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle notification preferences
-  const handleNotificationSettings = async (settings) => {
-    try {
-      const response = await fetch('/api/settings/notifications', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings),
-      });
-      if (!response.ok) throw new Error('Failed to update notification settings');
-      setMessage({ type: 'success', text: 'Notification settings updated!' });
-    } catch (error) {
-      setError(error.message);
-    }
-  };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-start bg-white pt-28 pb-8 px-4">
-      {/* Header */}
-      <div className="w-full max-w-sm mx-auto flex flex-col items-center">
-        <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-indigo-100 mb-4">
-          <img
-            src={user.image || '/default-avatar.png'}
-            alt="Profile"
-            className="w-full h-full object-cover object-center"
-          />
-        </div>
-        <div className="text-center mb-2">
-          <h2 className="text-2xl font-bold text-gray-900">{user.name}</h2>
-          <p className="text-gray-500 text-sm">{user.email}</p>
-        </div>
-      </div>
-
-      {/* Account Statistics */}
-      <div className="w-full max-w-sm mx-auto mt-6 bg-white rounded-2xl shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Overview</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-indigo-50 rounded-xl p-4">
-            <p className="text-sm text-indigo-600">Total Expenses</p>
-            <p className="text-xl font-bold text-indigo-900">${stats.totalExpenses}</p>
-          </div>
-          <div className="bg-green-50 rounded-xl p-4">
-            <p className="text-sm text-green-600">Total Income</p>
-            <p className="text-xl font-bold text-green-900">${stats.totalIncome}</p>
-          </div>
-          <div className="bg-blue-50 rounded-xl p-4">
-            <p className="text-sm text-blue-600">Savings</p>
-            <p className="text-xl font-bold text-blue-900">${stats.savings}</p>
-          </div>
-          <div className="bg-purple-50 rounded-xl p-4">
-            <p className="text-sm text-purple-600">Monthly Average</p>
-            <p className="text-xl font-bold text-purple-900">${stats.monthlyAverage}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Transactions */}
-      <div className="w-full max-w-sm mx-auto mt-6 bg-white rounded-2xl shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Transactions</h3>
-        <div className="space-y-4">
-          {recentTransactions.map((transaction) => (
-            <div key={transaction.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div className="flex items-center">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  transaction.type === 'expense' ? 'bg-red-100' : 'bg-green-100'
-                }`}>
-                  <CreditCardIcon className={`w-5 h-5 ${
-                    transaction.type === 'expense' ? 'text-red-600' : 'text-green-600'
-                  }`} />
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-900">{transaction.description}</p>
-                  <p className="text-xs text-gray-500">{new Date(transaction.date).toLocaleDateString()}</p>
-                </div>
-              </div>
-              <p className={`text-sm font-semibold ${
-                transaction.type === 'expense' ? 'text-red-600' : 'text-green-600'
-              }`}>
-                {transaction.type === 'expense' ? '-' : '+'}${transaction.amount}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Options List */}
-      <div className="w-full max-w-sm mx-auto mt-6 bg-white rounded-2xl shadow divide-y divide-gray-100">
-        <button onClick={() => setShowNotifications(true)} className="flex items-center w-full px-6 py-4 text-gray-700 hover:bg-gray-50 focus:outline-none">
-          <BellIcon className="h-5 w-5 mr-4 text-indigo-500" />
-          <span>Notifications</span>
-        </button>
-        <button onClick={() => setShowSecurity(true)} className="flex items-center w-full px-6 py-4 text-gray-700 hover:bg-gray-50 focus:outline-none">
-          <ShieldCheckIcon className="h-5 w-5 mr-4 text-indigo-500" />
-          <span>Security</span>
-        </button>
-        <button onClick={() => setShowPassword(true)} className="flex items-center w-full px-6 py-4 text-gray-700 hover:bg-gray-50 focus:outline-none">
-          <KeyIcon className="h-5 w-5 mr-4 text-indigo-500" />
-          <span>Change Password</span>
-        </button>
-        <button onClick={() => setShowSettings(true)} className="flex items-center w-full px-6 py-4 text-gray-700 hover:bg-gray-50 focus:outline-none rounded-b-2xl">
-          <Cog6ToothIcon className="h-5 w-5 mr-4 text-indigo-500" />
-          <span>Settings</span>
-        </button>
-      </div>
-
-      <button
-        onClick={() => signOut({ callbackUrl: '/' })}
-        className="w-full max-w-sm mx-auto mt-8 flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold text-lg shadow-md hover:from-indigo-600 hover:to-purple-600 transition-all duration-200"
-      >
-        <ArrowLeftOnRectangleIcon className="h-6 w-6 text-white" />
-        Logout
-      </button>
-
-      {/* Change Password Modal */}
-      {showPassword && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-xs">
-            <h2 className="text-xl font-bold mb-4 text-center">Change Password</h2>
-            <form onSubmit={handlePasswordUpdate} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Email</label>
-                <input
-                  type="email"
-                  value={user.email}
-                  disabled
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100 text-gray-500 cursor-not-allowed"
-                />
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-white rounded-lg shadow">
+          <div className="p-6 border-b">
+            <div className="flex items-center space-x-4">
+              <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center">
+                <FiUser className="h-8 w-8 text-blue-500" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">New Password</label>
-                <input
-                  type="password"
-                  name="newPassword"
-                  value={passwordForm.newPassword}
-                  onChange={e => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                  autoComplete="new-password"
-                />
+                <h1 className="text-2xl font-bold">{session?.user?.name}</h1>
+                <p className="text-gray-600">{session?.user?.email}</p>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Confirm Password</label>
-                <input
-                  type="password"
-                  name="confirm"
-                  value={passwordForm.confirm}
-                  onChange={e => setPasswordForm({ ...passwordForm, confirm: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                  autoComplete="new-password"
-                />
-              </div>
-              {error && <div className="text-red-500 text-sm">{error}</div>}
-              {message.text && (
-                <div className={`text-sm ${message.type === 'success' ? 'text-green-600' : 'text-red-500'}`}>
-                  {message.text}
-                </div>
-              )}
-              <div className="flex gap-2 mt-4">
-                <button type="button" onClick={() => setShowPassword(false)} className="flex-1 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold">Cancel</button>
-                <button type="submit" disabled={loading} className="flex-1 py-2 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-600 transition-all duration-200">{loading ? 'Saving...' : 'Change'}</button>
-              </div>
-            </form>
+            </div>
           </div>
-        </div>
-      )}
 
-      {/* Notifications Modal */}
-      {showNotifications && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-xs">
-            <h2 className="text-xl font-bold mb-4 text-center">Notification Settings</h2>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700">Email Notifications</span>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" className="sr-only peer" />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                </label>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700">Push Notifications</span>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" className="sr-only peer" />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                </label>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700">Transaction Alerts</span>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" className="sr-only peer" />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                </label>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-4">
+            {/* Sidebar */}
+            <div className="md:col-span-1 border-r">
+              <nav className="p-4">
+                <ul className="space-y-2">
+                  <li>
+                    <button
+                      onClick={() => setActiveTab('overview')}
+                      className={`w-full flex items-center space-x-2 p-2 rounded-lg ${
+                        activeTab === 'overview' ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-50'
+                      }`}
+                    >
+                      <FiCreditCard className="h-5 w-5" />
+                      <span>Overview</span>
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      onClick={() => setActiveTab('settings')}
+                      className={`w-full flex items-center space-x-2 p-2 rounded-lg ${
+                        activeTab === 'settings' ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-50'
+                      }`}
+                    >
+                      <FiSettings className="h-5 w-5" />
+                      <span>Settings</span>
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      onClick={() => setActiveTab('help')}
+                      className={`w-full flex items-center space-x-2 p-2 rounded-lg ${
+                        activeTab === 'help' ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-50'
+                      }`}
+                    >
+                      <FiHelpCircle className="h-5 w-5" />
+                      <span>Help & Support</span>
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      onClick={handleSignOut}
+                      className="w-full flex items-center space-x-2 p-2 rounded-lg text-red-600 hover:bg-red-50"
+                    >
+                      <FiLogOut className="h-5 w-5" />
+                      <span>Sign Out</span>
+                    </button>
+                  </li>
+                </ul>
+              </nav>
             </div>
-            <div className="flex gap-2 mt-6">
-              <button type="button" onClick={() => setShowNotifications(false)} className="flex-1 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold">Cancel</button>
-              <button type="button" onClick={() => setShowNotifications(false)} className="flex-1 py-2 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-600 transition-all duration-200">Save</button>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Security Modal */}
-      {showSecurity && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-xs">
-            <h2 className="text-xl font-bold mb-4 text-center">Security Settings</h2>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700">Two-Factor Authentication</span>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" className="sr-only peer" />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                </label>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700">Login Notifications</span>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" className="sr-only peer" />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                </label>
-              </div>
-            </div>
-            <div className="flex gap-2 mt-6">
-              <button type="button" onClick={() => setShowSecurity(false)} className="flex-1 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold">Cancel</button>
-              <button type="button" onClick={() => setShowSecurity(false)} className="flex-1 py-2 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-600 transition-all duration-200">Save</button>
+            {/* Main Content */}
+            <div className="md:col-span-3 p-6">
+              {renderContent()}
             </div>
           </div>
         </div>
-      )}
-
-      {/* Settings Modal */}
-      {showSettings && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-xs">
-            <h2 className="text-xl font-bold mb-4 text-center">Settings</h2>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700">Dark Mode</span>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" className="sr-only peer" />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                </label>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700">Currency</span>
-                <select className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                  <option value="USD">USD</option>
-                  <option value="EUR">EUR</option>
-                  <option value="GBP">GBP</option>
-                  <option value="INR">INR</option>
-                </select>
-              </div>
-            </div>
-            <div className="flex gap-2 mt-6">
-              <button type="button" onClick={() => setShowSettings(false)} className="flex-1 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold">Cancel</button>
-              <button type="button" onClick={() => setShowSettings(false)} className="flex-1 py-2 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-600 transition-all duration-200">Save</button>
-            </div>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 } 
