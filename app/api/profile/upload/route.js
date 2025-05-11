@@ -10,7 +10,7 @@ cloudinary.config({
 // Configure the route
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 300; // 5 minutes
+export const maxDuration = 60; // Maximum allowed for hobby plan
 
 // Add OPTIONS handler for CORS
 export async function OPTIONS() {
