@@ -4,32 +4,20 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { UserContext } from '../../context/UserContext';
 import { UserIcon, GlobeAltIcon, HeartIcon, ArrowLeftOnRectangleIcon, PencilIcon, KeyIcon } from '@heroicons/react/24/outline';
-import Cropper from 'react-easy-crop';
-import getCroppedImg from '../../utils/cropImage';
-import Slider from '@mui/material/Slider';
-import { Dialog } from '@headlessui/react';
 
 export default function ProfilePage() {
   const { data: session, status, update } = useSession();
   const { user, setUser } = useContext(UserContext);
   const router = useRouter();
-  const [imagePreview, setImagePreview] = useState('');
   const [showEdit, setShowEdit] = useState(false);
   const [showLang, setShowLang] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [form, setForm] = useState({ name: '', image: '' });
-  const [imageFile, setImageFile] = useState(null);
+  const [form, setForm] = useState({ name: '' });
   const [lang, setLang] = useState('English');
   const [passwordForm, setPasswordForm] = useState({ newPassword: '', confirm: '' });
   const [message, setMessage] = useState({ type: '', text: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
-  const [showCropper, setShowCropper] = useState(false);
-  const [croppedImage, setCroppedImage] = useState(null);
-  const [showCropModal, setShowCropModal] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -38,8 +26,7 @@ export default function ProfilePage() {
   }, [status, router]);
 
   useEffect(() => {
-    if (user?.image) setImagePreview(user.image);
-    if (user?.name) setForm(f => ({ ...f, name: user.name, image: user.image }));
+    if (user?.name) setForm(f => ({ ...f, name: user.name }));
   }, [user]);
 
   if (status === 'loading') {
@@ -50,31 +37,6 @@ export default function ProfilePage() {
     return null;
   }
 
-  // Edit profile logic
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
-      setShowCropper(true);
-    }
-  };
-
-  const onCropComplete = (croppedArea, croppedAreaPixels) => {
-    setCroppedAreaPixels(croppedAreaPixels);
-  };
-
-  const handleCropSave = async () => {
-    try {
-      const croppedImage = await getCroppedImg(imagePreview, croppedAreaPixels);
-      setCroppedImage(croppedImage);
-      setShowCropper(false);
-    } catch (e) {
-      console.error('Error saving cropped image:', e);
-      setShowCropper(false);
-    }
-  };
-
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -82,48 +44,6 @@ export default function ProfilePage() {
     setError('');
 
     try {
-      let imageUrl = user?.image;
-
-      if (croppedImage) {
-        console.log('Starting image upload...', {
-          type: 'image/png',
-          size: croppedImage.length,
-          name: 'profile-image.png'
-        });
-
-        // Convert base64 to blob
-        const response = await fetch(croppedImage);
-        const blob = await response.blob();
-        const file = new File([blob], 'profile-image.png', { type: 'image/png' });
-
-        const formData = new FormData();
-        formData.append('file', file);
-
-        const uploadResponse = await fetch('/api/image/upload', {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'Accept': 'application/json'
-          }
-        });
-
-        console.log('Upload response status:', uploadResponse.status);
-        
-        if (!uploadResponse.ok) {
-          const errorData = await uploadResponse.json();
-          throw new Error(errorData.error || 'Failed to upload image');
-        }
-
-        const uploadData = await uploadResponse.json();
-        console.log('Upload response data:', uploadData);
-        
-        if (!uploadData.url) {
-          throw new Error('No image URL received from upload');
-        }
-        
-        imageUrl = uploadData.url;
-      }
-
       const response = await fetch('/api/profile', {
         method: 'PUT',
         headers: {
@@ -132,8 +52,7 @@ export default function ProfilePage() {
         },
         body: JSON.stringify({
           name: form.name,
-          email: user.email,
-          image: imageUrl
+          email: user.email
         }),
       });
 
@@ -146,16 +65,13 @@ export default function ProfilePage() {
       console.log('Profile update response:', data);
       
       setMessage({ type: 'success', text: 'Profile updated successfully!' });
-      setCroppedImage(null);
-      setShowCropper(false);
       setShowEdit(false);
       
       // Update the user state with new data
       setUser(prev => ({
         ...prev,
         name: form.name,
-        email: user.email,
-        image: imageUrl
+        email: user.email
       }));
     } catch (error) {
       console.error('Profile update error:', error);
@@ -203,7 +119,7 @@ export default function ProfilePage() {
       <div className="w-full max-w-sm mx-auto flex flex-col items-center">
         <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-indigo-100 mb-4">
           <img
-            src={imagePreview || '/default-avatar.png'}
+            src={user.image || '/default-avatar.png'}
             alt="Profile"
             className="w-full h-full object-cover object-center"
           />
@@ -243,19 +159,6 @@ export default function ProfilePage() {
           <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-sm">
             <h2 className="text-2xl font-bold mb-4 text-center text-gray-800">Edit Profile</h2>
             <form onSubmit={handleProfileUpdate} className="space-y-4">
-              <div className="flex flex-col items-center">
-                <img
-                  src={imagePreview || '/default-avatar.png'}
-                  alt="Profile"
-                  className="w-20 h-20 rounded-full object-cover border-2 border-indigo-200 mb-2"
-                />
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-                />
-              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">Name</label>
                 <input
@@ -279,40 +182,6 @@ export default function ProfilePage() {
                 <button type="submit" disabled={loading} className="flex-1 py-2 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-600 transition-all duration-200">{loading ? 'Saving...' : 'Save'}</button>
               </div>
             </form>
-            {/* Cropper Modal */}
-            {showCropper && (
-              <Dialog open={showCropper} onClose={() => setShowCropper(false)} className="fixed inset-0 z-50 flex items-center justify-center">
-                <div className="fixed inset-0 bg-black bg-opacity-40" />
-                <div className="relative bg-white rounded-2xl shadow-xl p-6 w-[320px] flex flex-col items-center">
-                  <div className="relative w-56 h-56 bg-gray-100 rounded-lg overflow-hidden">
-                    <Cropper
-                      image={imagePreview}
-                      crop={crop}
-                      zoom={zoom}
-                      aspect={1}
-                      cropShape="round"
-                      showGrid={false}
-                      onCropChange={setCrop}
-                      onZoomChange={setZoom}
-                      onCropComplete={onCropComplete}
-                    />
-                  </div>
-                  <div className="w-full mt-4">
-                    <Slider
-                      min={1}
-                      max={3}
-                      step={0.01}
-                      value={zoom}
-                      onChange={(_, value) => setZoom(value)}
-                    />
-                  </div>
-                  <div className="flex gap-2 mt-4">
-                    <button type="button" onClick={() => setShowCropper(false)} className="flex-1 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold">Cancel</button>
-                    <button type="button" onClick={handleCropSave} className="flex-1 py-2 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-600 transition-all duration-200">Crop & Save</button>
-                  </div>
-                </div>
-              </Dialog>
-            )}
           </div>
         </div>
       )}
