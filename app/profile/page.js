@@ -95,6 +95,9 @@ export default function ProfilePage() {
         
         const res = await fetch('/api/profile/upload', {
           method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+          },
           body: formData,
         });
         
@@ -116,7 +119,10 @@ export default function ProfilePage() {
       console.log('Updating profile...');
       const res2 = await fetch('/api/profile/update', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
         body: JSON.stringify({ name: form.name, image: imageUrl }),
       });
 
