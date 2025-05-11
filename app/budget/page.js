@@ -13,7 +13,6 @@ import {
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
-import AccountOverview from '../components/AccountOverview';
 
 export default function BudgetPage() {
   const { data: session, status } = useSession();
@@ -174,11 +173,6 @@ export default function BudgetPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 pt-32 pb-8">
-        {/* Account Overview */}
-        <div className="mb-8">
-          <AccountOverview />
-        </div>
-
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           {/* Heading */}

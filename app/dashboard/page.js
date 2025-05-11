@@ -30,7 +30,6 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { UserContext } from '../../context/UserContext';
 import { useSession } from 'next-auth/react';
-import AccountOverview from '../components/AccountOverview';
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 export default function Dashboard() {
@@ -295,11 +294,6 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 pt-32 pb-8">
-        {/* Account Overview */}
-        <div className="mb-8">
-          <AccountOverview />
-        </div>
-
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           {/* Heading */}
