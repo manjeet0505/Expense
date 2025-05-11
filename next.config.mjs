@@ -13,11 +13,6 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  
-  // Add experimental flag for mongoose
-  experimental: {
-    serverComponentsExternalPackages: ['mongoose'],
-  },
 };
 
 // Check if we're in a Netlify environment
