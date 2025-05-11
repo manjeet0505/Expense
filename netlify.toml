@@ -1,4 +1,5 @@
 [build]
+  base = "expense"
   command = "npm run build"
   publish = "out"
 
