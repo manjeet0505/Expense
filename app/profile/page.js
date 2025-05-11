@@ -99,11 +99,8 @@ export default function ProfilePage() {
         const formData = new FormData();
         formData.append('file', file);
 
-        const uploadResponse = await fetch('/api/upload', {
+        const uploadResponse = await fetch('/api/image/upload', {
           method: 'POST',
-          headers: {
-            'Accept': 'application/json',
-          },
           body: formData
         });
 
