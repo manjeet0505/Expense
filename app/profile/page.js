@@ -90,23 +90,38 @@ export default function ProfilePage() {
           method: 'POST',
           body: formData,
         });
+        
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || 'Image upload failed');
+        }
+        
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Image upload failed');
+        if (!data.url) {
+          throw new Error('Invalid response from server');
+        }
         imageUrl = data.url;
       }
+
       const res2 = await fetch('/api/profile/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: form.name, image: imageUrl }),
       });
+
+      if (!res2.ok) {
+        const errorData = await res2.json();
+        throw new Error(errorData.error || 'Update failed');
+      }
+
       const data2 = await res2.json();
-      if (!res2.ok) throw new Error(data2.error || 'Update failed');
       setMessage('Profile updated successfully!');
       setUser({ name: form.name, image: imageUrl, email: user.email });
       setShowEdit(false);
       setImageFile(null);
     } catch (err) {
-      setError(err.message);
+      console.error('Profile update error:', err);
+      setError(err.message || 'An error occurred while updating your profile');
     } finally {
       setLoading(false);
     }
