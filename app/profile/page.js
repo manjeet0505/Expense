@@ -84,14 +84,24 @@ export default function ProfilePage() {
     let imageUrl = form.image;
     try {
       if (imageFile) {
+        console.log('Starting image upload...', {
+          type: imageFile.type,
+          size: imageFile.size,
+          name: imageFile.name
+        });
+
         const formData = new FormData();
         formData.append('file', imageFile);
+        
         const res = await fetch('/api/profile/upload', {
           method: 'POST',
           body: formData,
         });
         
+        console.log('Upload response status:', res.status);
         const data = await res.json();
+        console.log('Upload response data:', data);
+
         if (!res.ok) {
           throw new Error(data.error || 'Image upload failed');
         }
@@ -100,15 +110,20 @@ export default function ProfilePage() {
           throw new Error('Invalid response from server');
         }
         imageUrl = data.url;
+        console.log('Image uploaded successfully:', imageUrl);
       }
 
+      console.log('Updating profile...');
       const res2 = await fetch('/api/profile/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: form.name, image: imageUrl }),
       });
 
+      console.log('Profile update response status:', res2.status);
       const data2 = await res2.json();
+      console.log('Profile update response data:', data2);
+
       if (!res2.ok) {
         throw new Error(data2.error || 'Update failed');
       }
