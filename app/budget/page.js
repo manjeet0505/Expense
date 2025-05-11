@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import {
@@ -42,7 +42,7 @@ export default function BudgetPage() {
 
   useEffect(() => {
     checkBudgetAlerts();
-  }, [budgets, expenses]);
+  }, [checkBudgetAlerts]);
 
   const fetchBudgets = async () => {
     try {
@@ -66,7 +66,7 @@ export default function BudgetPage() {
     }
   };
 
-  const checkBudgetAlerts = () => {
+  const checkBudgetAlerts = useCallback(() => {
     const newAlerts = budgets
       .map(budget => {
         const spent = expenses
@@ -91,7 +91,7 @@ export default function BudgetPage() {
       })
       .filter(Boolean);
     setAlerts(newAlerts);
-  };
+  }, [budgets, expenses]);
 
   const handleAddBudget = async (e) => {
     e.preventDefault();

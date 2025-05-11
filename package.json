@@ -4,8 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build && next export",
-    "postbuild": "cp -r public/. out/",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },

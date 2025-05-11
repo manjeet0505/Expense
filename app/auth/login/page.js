@@ -170,7 +170,7 @@ export default function LoginPage() {
         </motion.div>
 
         <div className="mt-6 text-center">
-          <span className="text-sm text-gray-600">Don't have an account? </span>
+          <span className="text-sm text-gray-600">Don&apos;t have an account? </span>
           <a href="/auth/signup" className="text-indigo-600 hover:underline font-medium">Sign up</a>
         </div>
       </motion.div>

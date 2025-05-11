@@ -2,6 +2,7 @@
 import { useState, useEffect, useContext } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import {
   ChartBarIcon,
   ArrowTrendingUpIcon,
@@ -299,9 +300,11 @@ export default function Dashboard() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8 flex items-center space-x-4"
         >
-          <img
+          <Image
             src={user?.image || '/default-avatar.png'}
             alt="Profile"
+            width={48}
+            height={48}
             className="w-12 h-12 rounded-full object-cover object-center border-2 border-indigo-300"
             onError={e => { e.target.onerror = null; e.target.src = '/default-avatar.png'; }}
           />
