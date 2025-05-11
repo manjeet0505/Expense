@@ -1,17 +1,21 @@
 'use client';
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
 import { motion } from 'framer-motion';
 import { FcGoogle } from 'react-icons/fc';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function LoginPage() {
+// Add dynamic configuration
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+function LoginContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+  const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard';
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -40,12 +44,10 @@ export default function LoginPage() {
     try {
       setIsLoading(true);
       setError('');
-      // Use redirect: true to allow Google OAuth to handle the flow properly
       await signIn('google', {
         redirect: true,
         callbackUrl: '/dashboard'
       });
-      // The code below won't execute due to the redirect
     } catch (error) {
       setError('An unexpected error occurred. Please try again.');
       setIsLoading(false);
@@ -88,7 +90,6 @@ export default function LoginPage() {
           </motion.div>
         )}
 
-        {/* Email/Password Login Form */}
         <form onSubmit={handleSubmit} className="space-y-4 mb-6">
           <div>
             <label className="block text-sm font-medium text-gray-700">Email</label>
@@ -129,7 +130,6 @@ export default function LoginPage() {
           <div className="flex-1 h-px bg-gray-200" />
         </div>
 
-        {/* Google OAuth Button */}
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
@@ -171,5 +171,17 @@ export default function LoginPage() {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center">
+        <div className="animate-pulse">Loading...</div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 } 
