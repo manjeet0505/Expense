@@ -101,6 +101,9 @@ export default function ProfilePage() {
 
         const uploadResponse = await fetch('/api/upload', {
           method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+          },
           body: formData
         });
 
