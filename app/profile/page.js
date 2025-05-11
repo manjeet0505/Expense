@@ -28,6 +28,8 @@ export default function ProfilePage() {
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [showCropper, setShowCropper] = useState(false);
+  const [croppedImage, setCroppedImage] = useState(null);
+  const [showCropModal, setShowCropModal] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -65,14 +67,8 @@ export default function ProfilePage() {
   const handleCropSave = async () => {
     try {
       const croppedImage = await getCroppedImg(imagePreview, croppedAreaPixels);
-      setImagePreview(croppedImage);
+      setCroppedImage(croppedImage);
       setShowCropper(false);
-      
-      // Convert base64 to File for upload
-      const res = await fetch(croppedImage);
-      const blob = await res.blob();
-      const file = new File([blob], 'profile-image.png', { type: 'image/png' });
-      setImageFile(file);
     } catch (e) {
       console.error('Error saving cropped image:', e);
       setShowCropper(false);
@@ -82,68 +78,81 @@ export default function ProfilePage() {
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setMessage('');
-    setError('');
-    let imageUrl = form.image;
+    setMessage({ type: '', text: '' });
+
     try {
-      if (imageFile) {
+      let imageUrl = user?.image;
+
+      if (croppedImage) {
         console.log('Starting image upload...', {
-          type: imageFile.type,
-          size: imageFile.size,
-          name: imageFile.name
+          type: 'image/png',
+          size: croppedImage.length,
+          name: 'profile-image.png'
         });
 
         const formData = new FormData();
-        formData.append('file', imageFile);
-        
-        const res = await fetch('/api/profile/upload', {
-          method: 'POST',
-          body: formData,
-        });
-        
-        console.log('Upload response status:', res.status);
-        
-        if (!res.ok) {
-          const errorData = await res.json().catch(() => ({ error: 'Failed to parse error response' }));
-          throw new Error(errorData.error || `Upload failed with status ${res.status}`);
-        }
-        
-        const data = await res.json();
-        console.log('Upload response data:', data);
+        const file = new File([croppedImage], 'profile-image.png', { type: 'image/png' });
+        formData.append('file', file);
 
-        if (!data.url) {
-          throw new Error('Invalid response from server');
+        const uploadResponse = await fetch('/api/profile/upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        console.log('Upload response status:', uploadResponse.status);
+        
+        if (!uploadResponse.ok) {
+          const errorData = await uploadResponse.json().catch(() => ({ error: 'Upload failed' }));
+          throw new Error(errorData.error || 'Failed to upload image');
         }
-        imageUrl = data.url;
-        console.log('Image uploaded successfully:', imageUrl);
+
+        const uploadData = await uploadResponse.json();
+        console.log('Upload response data:', uploadData);
+        
+        if (!uploadData.url) {
+          throw new Error('No image URL received from upload');
+        }
+        
+        imageUrl = uploadData.url;
       }
 
-      console.log('Updating profile...');
-      const res2 = await fetch('/api/profile/update', {
-        method: 'POST',
-        headers: { 
+      const response = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name: form.name, image: imageUrl }),
+        body: JSON.stringify({
+          name: form.name,
+          email: user.email,
+          image: imageUrl
+        }),
       });
 
-      console.log('Profile update response status:', res2.status);
-      
-      if (!res2.ok) {
-        const errorData = await res2.json().catch(() => ({ error: 'Failed to parse error response' }));
-        throw new Error(errorData.error || `Update failed with status ${res2.status}`);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Profile update failed' }));
+        throw new Error(errorData.error || 'Failed to update profile');
       }
 
-      const data2 = await res2.json();
-      console.log('Profile update response data:', data2);
-
-      setMessage('Profile updated successfully!');
-      setUser({ name: form.name, image: imageUrl, email: user.email });
-      setShowEdit(false);
-      setImageFile(null);
-    } catch (err) {
-      console.error('Profile update error:', err);
-      setError(err.message || 'An error occurred while updating your profile');
+      const data = await response.json();
+      console.log('Profile update response:', data);
+      
+      setMessage({ type: 'success', text: 'Profile updated successfully!' });
+      setCroppedImage(null);
+      setShowCropModal(false);
+      
+      // Update the user state with new data
+      setUser(prev => ({
+        ...prev,
+        name: form.name,
+        email: user.email,
+        image: imageUrl
+      }));
+    } catch (error) {
+      console.error('Profile update error:', error);
+      setMessage({ 
+        type: 'error', 
+        text: error.message || 'Failed to update profile. Please try again.' 
+      });
     } finally {
       setLoading(false);
     }
