@@ -67,11 +67,14 @@ export default function ProfilePage() {
       const croppedImage = await getCroppedImg(imagePreview, croppedAreaPixels);
       setImagePreview(croppedImage);
       setShowCropper(false);
+      
       // Convert base64 to File for upload
       const res = await fetch(croppedImage);
       const blob = await res.blob();
-      setImageFile(new File([blob], 'cropped-image.png', { type: blob.type }));
+      const file = new File([blob], 'profile-image.png', { type: 'image/png' });
+      setImageFile(file);
     } catch (e) {
+      console.error('Error saving cropped image:', e);
       setShowCropper(false);
     }
   };
@@ -95,9 +98,6 @@ export default function ProfilePage() {
         
         const res = await fetch('/api/profile/upload', {
           method: 'POST',
-          headers: {
-            'Accept': 'application/json',
-          },
           body: formData,
         });
         
@@ -121,7 +121,6 @@ export default function ProfilePage() {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
         },
         body: JSON.stringify({ name: form.name, image: imageUrl }),
       });

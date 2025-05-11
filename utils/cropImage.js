@@ -20,15 +20,14 @@ export default function getCroppedImg(imageSrc, pixelCrop) {
         pixelCrop.width,
         pixelCrop.height
       );
-      canvas.toBlob(blob => {
-        if (!blob) {
-          reject(new Error('Canvas is empty'));
-          return;
-        }
-        const url = URL.createObjectURL(blob);
-        resolve(url);
-      }, 'image/png');
+      
+      // Convert to base64
+      const base64String = canvas.toDataURL('image/png');
+      resolve(base64String);
     };
-    image.onerror = error => reject(error);
+    image.onerror = error => {
+      console.error('Error loading image:', error);
+      reject(error);
+    };
   });
 } 
