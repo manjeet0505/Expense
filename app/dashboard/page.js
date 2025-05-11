@@ -30,6 +30,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { UserContext } from '../../context/UserContext';
 import { useSession } from 'next-auth/react';
+import AccountOverview from '../components/AccountOverview';
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 export default function Dashboard() {
@@ -292,31 +293,24 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 pt-24">
-      <div className="container mx-auto px-4 py-8">
-        {/* Welcome Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8 flex items-center space-x-4"
-        >
-          <Image
-            src={user?.image || '/default-avatar.png'}
-            alt="Profile"
-            width={48}
-            height={48}
-            className="w-12 h-12 rounded-full object-cover object-center border-2 border-indigo-300"
-            onError={e => { e.target.onerror = null; e.target.src = '/default-avatar.png'; }}
-          />
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Welcome back, {user?.name || 'User'}!
-            </h1>
-            <p className="text-gray-600 mt-2">
-              Here's an overview of your financial status
-            </p>
-          </div>
-        </motion.div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 pt-32 pb-8">
+        {/* Account Overview */}
+        <div className="mb-8">
+          <AccountOverview />
+        </div>
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          {/* Heading */}
+          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 bg-clip-text text-transparent drop-shadow-lg">Dashboard</h1>
+          <button 
+            onClick={() => setShowAddForm(true)}
+            className="ml-4 px-6 py-3 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold shadow-lg hover:from-indigo-600 hover:to-pink-500 hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          >
+            + Add New Transaction
+          </button>
+        </div>
 
         {/* Export to PDF Button */}
         <button
