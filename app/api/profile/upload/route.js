@@ -7,9 +7,10 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Configure the route to handle POST requests
+// Configure the route
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const maxDuration = 300; // 5 minutes
 
 // Add OPTIONS handler for CORS
 export async function OPTIONS() {
@@ -18,16 +19,17 @@ export async function OPTIONS() {
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     },
   });
 }
 
-export async function POST(req) {
+// Handle POST requests
+export async function POST(request) {
   try {
     console.log('Starting image upload process...');
     
-    const formData = await req.formData();
+    const formData = await request.formData();
     const file = formData.get('file');
     
     if (!file) {

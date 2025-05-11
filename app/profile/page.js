@@ -102,13 +102,15 @@ export default function ProfilePage() {
         });
         
         console.log('Upload response status:', res.status);
+        
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({ error: 'Failed to parse error response' }));
+          throw new Error(errorData.error || `Upload failed with status ${res.status}`);
+        }
+        
         const data = await res.json();
         console.log('Upload response data:', data);
 
-        if (!res.ok) {
-          throw new Error(data.error || 'Image upload failed');
-        }
-        
         if (!data.url) {
           throw new Error('Invalid response from server');
         }
@@ -126,12 +128,14 @@ export default function ProfilePage() {
       });
 
       console.log('Profile update response status:', res2.status);
+      
+      if (!res2.ok) {
+        const errorData = await res2.json().catch(() => ({ error: 'Failed to parse error response' }));
+        throw new Error(errorData.error || `Update failed with status ${res2.status}`);
+      }
+
       const data2 = await res2.json();
       console.log('Profile update response data:', data2);
-
-      if (!res2.ok) {
-        throw new Error(data2.error || 'Update failed');
-      }
 
       setMessage('Profile updated successfully!');
       setUser({ name: form.name, image: imageUrl, email: user.email });
