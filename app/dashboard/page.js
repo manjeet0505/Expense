@@ -166,18 +166,18 @@ export default function Dashboard() {
   }
 
   // Use stats and budgetSummary for summary cards
-  const totalBalance = stats?.totalBalance || 0;
-  const totalIncome = stats?.totalIncome || 0;
-  const totalExpenses = stats?.totalExpenses || 0;
-  const monthlyBudget = budgetSummary?.amount || 0;
-  const thisMonth = stats?.thisMonth || 0;
+  const totalBalance = stats?.totalBalance;
+  const totalIncome = stats?.totalIncome;
+  const totalExpenses = stats?.totalExpenses;
+  const monthlyBudget = budgetSummary?.amount;
+  const thisMonth = stats?.thisMonth;
 
   const balance = totalIncome - totalExpenses;
 
   const statsData = [
     {
       title: "Total Balance",
-      value: "$" + totalBalance.toFixed(2),
+      value: totalBalance !== undefined ? "$" + totalBalance.toFixed(2) : <span className="text-gray-400 animate-pulse">Loading...</span>,
       change: "+12.5%",
       trend: "up",
       icon: <WalletIcon className="w-6 h-6" />,
@@ -185,7 +185,7 @@ export default function Dashboard() {
     },
     {
       title: "Monthly Income",
-      value: "$" + totalIncome.toFixed(2),
+      value: totalIncome !== undefined ? "$" + totalIncome.toFixed(2) : <span className="text-gray-400 animate-pulse">Loading...</span>,
       change: "+8.2%",
       trend: "up",
       icon: <ArrowTrendingUpIcon className="w-6 h-6" />,
@@ -193,7 +193,7 @@ export default function Dashboard() {
     },
     {
       title: "Monthly Expenses",
-      value: "$" + totalExpenses.toFixed(2),
+      value: totalExpenses !== undefined ? "$" + totalExpenses.toFixed(2) : <span className="text-gray-400 animate-pulse">Loading...</span>,
       change: "-3.1%",
       trend: "down",
       icon: <ArrowTrendingDownIcon className="w-6 h-6" />,

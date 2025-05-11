@@ -128,8 +128,6 @@ export default function BudgetPage() {
       });
 
       if (res.ok) {
-        const newBudget = await res.json();
-        setBudgets([...budgets, newBudget]);
         setFormData({
           category: '',
           amount: '',
@@ -137,6 +135,7 @@ export default function BudgetPage() {
           notes: ''
         });
         setShowAddForm(false);
+        fetchBudgets(); // Re-fetch budgets list from server
         fetchStatsAndBudget(); // Re-fetch summary data
       }
     } catch (error) {
