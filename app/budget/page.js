@@ -169,9 +169,9 @@ export default function BudgetPage() {
     };
   });
 
-  // Calculate total spent, total budget, and remaining using budgetTrackers
-  const totalSpent = stats?.totalExpenses || 0;
-  const totalBudget = budgetSummary?.amount || 0;
+  // Calculate total spent, total budget, and remaining using budgetTrackers (local state)
+  const totalSpent = budgetTrackers.reduce((sum, b) => sum + b.spent, 0);
+  const totalBudget = budgetTrackers.reduce((sum, b) => sum + b.amount, 0);
   const remaining = totalBudget - totalSpent;
 
   const summary = [
