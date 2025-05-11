@@ -107,7 +107,7 @@ export default function ProfilePage() {
         console.log('Upload response status:', uploadResponse.status);
         
         if (!uploadResponse.ok) {
-          const errorData = await uploadResponse.json().catch(() => ({ error: 'Upload failed' }));
+          const errorData = await uploadResponse.json();
           throw new Error(errorData.error || 'Failed to upload image');
         }
 
@@ -134,7 +134,7 @@ export default function ProfilePage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Profile update failed' }));
+        const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to update profile');
       }
 
