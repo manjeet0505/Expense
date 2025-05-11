@@ -131,6 +131,7 @@ export default function Dashboard() {
         });
         setShowAddForm(false);
         fetchStatsAndBudget(); // Re-fetch summary data
+        fetchExpenses(); // Re-fetch expenses list
       } else {
         const error = await res.json();
         console.error('Error adding expense:', error);
@@ -149,6 +150,7 @@ export default function Dashboard() {
       if (res.ok) {
         setExpenses(expenses.filter(expense => expense._id !== id));
         fetchStatsAndBudget(); // Re-fetch summary data
+        fetchExpenses(); // Re-fetch expenses list
       }
     } catch (error) {
       console.error('Error deleting expense:', error);
