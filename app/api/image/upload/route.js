@@ -11,6 +11,18 @@ cloudinary.config({
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+// Add OPTIONS handler for CORS
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  });
+}
+
 export async function POST(request) {
   try {
     console.log('Starting image upload process...');
@@ -22,7 +34,13 @@ export async function POST(request) {
       console.log('No file received in request');
       return new NextResponse(
         JSON.stringify({ error: 'No file uploaded' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+        { 
+          status: 400, 
+          headers: { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          } 
+        }
       );
     }
 
@@ -38,7 +56,13 @@ export async function POST(request) {
       console.log('Invalid file type:', file.type);
       return new NextResponse(
         JSON.stringify({ error: 'Invalid file type. Please upload a JPEG, PNG, GIF, or WebP image.' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+        { 
+          status: 400, 
+          headers: { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          } 
+        }
       );
     }
 
@@ -48,7 +72,13 @@ export async function POST(request) {
       console.log('File too large:', file.size);
       return new NextResponse(
         JSON.stringify({ error: 'File too large. Maximum size is 5MB.' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+        { 
+          status: 400, 
+          headers: { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          } 
+        }
       );
     }
 
@@ -86,13 +116,25 @@ export async function POST(request) {
         url: result.secure_url,
         public_id: result.public_id
       }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
+      { 
+        status: 200, 
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        } 
+      }
     );
   } catch (error) {
     console.error('Image upload error:', error);
     return new NextResponse(
       JSON.stringify({ error: error.message || 'Image upload failed. Please try again.' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      { 
+        status: 500, 
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        } 
+      }
     );
   }
 } 

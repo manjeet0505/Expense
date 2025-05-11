@@ -101,7 +101,10 @@ export default function ProfilePage() {
 
         const uploadResponse = await fetch('/api/image/upload', {
           method: 'POST',
-          body: formData
+          body: formData,
+          headers: {
+            'Accept': 'application/json'
+          }
         });
 
         console.log('Upload response status:', uploadResponse.status);
@@ -125,6 +128,7 @@ export default function ProfilePage() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
         body: JSON.stringify({
           name: form.name,
