@@ -7,12 +7,11 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+// Configure the route
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
+// Handle POST requests
 export async function POST(request) {
   try {
     console.log('Starting image upload process...');

@@ -91,8 +91,12 @@ export default function ProfilePage() {
           name: 'profile-image.png'
         });
 
+        // Convert base64 to blob
+        const response = await fetch(croppedImage);
+        const blob = await response.blob();
+        const file = new File([blob], 'profile-image.png', { type: 'image/png' });
+
         const formData = new FormData();
-        const file = new File([croppedImage], 'profile-image.png', { type: 'image/png' });
         formData.append('file', file);
 
         const uploadResponse = await fetch('/api/profile/upload', {
