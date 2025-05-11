@@ -35,15 +35,6 @@ export default function BudgetPage() {
     }
   }, [status, router]);
 
-  useEffect(() => {
-    fetchBudgets();
-    fetchExpenses();
-  }, []);
-
-  useEffect(() => {
-    checkBudgetAlerts();
-  }, [checkBudgetAlerts]);
-
   const fetchBudgets = async () => {
     try {
       const res = await fetch('/api/budgets');
@@ -92,6 +83,15 @@ export default function BudgetPage() {
       .filter(Boolean);
     setAlerts(newAlerts);
   }, [budgets, expenses]);
+
+  useEffect(() => {
+    fetchBudgets();
+    fetchExpenses();
+  }, []);
+
+  useEffect(() => {
+    checkBudgetAlerts();
+  }, [checkBudgetAlerts]);
 
   const handleAddBudget = async (e) => {
     e.preventDefault();
@@ -177,7 +177,10 @@ export default function BudgetPage() {
         <div className="flex items-center justify-between mb-8">
           {/* Heading */}
           <h1 className="text-4xl font-extrabold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 bg-clip-text text-transparent drop-shadow-lg">Budget Manager</h1>
-          <button className="ml-4 px-6 py-3 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold shadow-lg hover:from-indigo-600 hover:to-pink-500 hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+          <button 
+            onClick={() => setShowAddForm(true)}
+            className="ml-4 px-6 py-3 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold shadow-lg hover:from-indigo-600 hover:to-pink-500 hover:scale-105 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          >
             + Add New Budget
           </button>
         </div>

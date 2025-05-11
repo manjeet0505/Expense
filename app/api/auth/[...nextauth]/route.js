@@ -5,6 +5,8 @@ import crypto from 'crypto';
 import User from '@/models/User';
 import connectDB from '@/lib/mongodb';
 
+// Use environment variables directly
+
 const authOptions = {
   providers: [
     GoogleProvider({
@@ -76,10 +78,24 @@ const authOptions = {
       }
       return true;
     },
+    async redirect({ url, baseUrl }) {
+      // Allows relative callback URLs
+      if (url.startsWith("/")) {
+        return `${baseUrl}${url}`;
+      }
+      // Allows callback URLs on the same origin
+      else if (new URL(url).origin === baseUrl) {
+        return url;
+      }
+      // Default to dashboard
+      return `${baseUrl}/dashboard`;
+    },
     async session({ session }) {
       await connectDB();
       const user = await User.findOne({ email: session.user.email });
-      session.user.id = user._id.toString();
+      if (user) {
+        session.user.id = user._id.toString();
+      }
       return session;
     },
   },

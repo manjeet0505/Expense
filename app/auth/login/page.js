@@ -40,18 +40,14 @@ export default function LoginPage() {
     try {
       setIsLoading(true);
       setError('');
-      const result = await signIn('google', {
-        redirect: false,
-        callbackUrl
+      // Use redirect: true to allow Google OAuth to handle the flow properly
+      await signIn('google', {
+        redirect: true,
+        callbackUrl: '/dashboard'
       });
-      if (result?.error) {
-        setError('Failed to sign in with Google. Please try again.');
-      } else if (result?.ok) {
-        router.push('/dashboard');
-      }
+      // The code below won't execute due to the redirect
     } catch (error) {
       setError('An unexpected error occurred. Please try again.');
-    } finally {
       setIsLoading(false);
     }
   };
