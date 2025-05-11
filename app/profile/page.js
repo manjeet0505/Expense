@@ -2,41 +2,39 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { format } from 'date-fns';
-import { FiUser, FiMail, FiCalendar, FiDollarSign, FiCreditCard, FiTrendingUp, FiTrendingDown } from 'react-icons/fi';
+import { FiUser, FiDollarSign, FiTrendingUp, FiTrendingDown } from 'react-icons/fi';
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
-  const [recentTransactions, setRecentTransactions] = useState([]);
+
+  const fetchStats = async () => {
+    try {
+      const response = await fetch('/api/stats');
+      if (response.ok) {
+        const data = await response.json();
+        setStats(data);
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [statsResponse, transactionsResponse] = await Promise.all([
-          fetch('/api/stats'),
-          fetch('/api/transactions/recent')
-        ]);
-
-        if (statsResponse.ok) {
-          const statsData = await statsResponse.json();
-          setStats(statsData);
-        }
-
-        if (transactionsResponse.ok) {
-          const transactionsData = await transactionsResponse.json();
-          setRecentTransactions(transactionsData);
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (session) {
-      fetchData();
+      fetchStats();
+    }
+  }, [session]);
+
+  // Set up real-time updates
+  useEffect(() => {
+    if (session) {
+      // Fetch stats every 30 seconds
+      const interval = setInterval(fetchStats, 30000);
+      return () => clearInterval(interval);
     }
   }, [session]);
 
@@ -83,7 +81,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Financial Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Income Card */}
           <div className="bg-white rounded-2xl shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
@@ -118,46 +116,6 @@ export default function ProfilePage() {
               ${stats?.savings.toFixed(2) || '0.00'}
             </p>
             <p className="text-sm text-gray-500 mt-2">This month</p>
-          </div>
-        </div>
-
-        {/* Recent Transactions */}
-        <div className="bg-white rounded-2xl shadow-sm p-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Recent Transactions</h2>
-          <div className="space-y-4">
-            {recentTransactions.length > 0 ? (
-              recentTransactions.map((transaction) => (
-                <div
-                  key={transaction.id}
-                  className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                      transaction.type === 'income' ? 'bg-green-100' : 'bg-red-100'
-                    }`}>
-                      {transaction.type === 'income' ? (
-                        <FiTrendingUp className="h-5 w-5 text-green-500" />
-                      ) : (
-                        <FiTrendingDown className="h-5 w-5 text-red-500" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{transaction.description}</p>
-                      <p className="text-sm text-gray-500">
-                        {format(new Date(transaction.date), 'MMM d, yyyy')}
-                      </p>
-                    </div>
-                  </div>
-                  <span className={`font-semibold ${
-                    transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {transaction.type === 'income' ? '+' : '-'}${Math.abs(transaction.amount).toFixed(2)}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <p className="text-gray-500 text-center py-4">No recent transactions</p>
-            )}
           </div>
         </div>
       </div>
