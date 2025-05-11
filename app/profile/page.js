@@ -91,12 +91,11 @@ export default function ProfilePage() {
           body: formData,
         });
         
+        const data = await res.json();
         if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.error || 'Image upload failed');
+          throw new Error(data.error || 'Image upload failed');
         }
         
-        const data = await res.json();
         if (!data.url) {
           throw new Error('Invalid response from server');
         }
@@ -109,12 +108,11 @@ export default function ProfilePage() {
         body: JSON.stringify({ name: form.name, image: imageUrl }),
       });
 
+      const data2 = await res2.json();
       if (!res2.ok) {
-        const errorData = await res2.json();
-        throw new Error(errorData.error || 'Update failed');
+        throw new Error(data2.error || 'Update failed');
       }
 
-      const data2 = await res2.json();
       setMessage('Profile updated successfully!');
       setUser({ name: form.name, image: imageUrl, email: user.email });
       setShowEdit(false);
