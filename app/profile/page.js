@@ -21,7 +21,7 @@ export default function ProfilePage() {
   const [imageFile, setImageFile] = useState(null);
   const [lang, setLang] = useState('English');
   const [passwordForm, setPasswordForm] = useState({ newPassword: '', confirm: '' });
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState({ type: '', text: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -79,6 +79,7 @@ export default function ProfilePage() {
     e.preventDefault();
     setLoading(true);
     setMessage({ type: '', text: '' });
+    setError('');
 
     try {
       let imageUrl = user?.image;
@@ -138,7 +139,8 @@ export default function ProfilePage() {
       
       setMessage({ type: 'success', text: 'Profile updated successfully!' });
       setCroppedImage(null);
-      setShowCropModal(false);
+      setShowCropper(false);
+      setShowEdit(false);
       
       // Update the user state with new data
       setUser(prev => ({
@@ -149,10 +151,7 @@ export default function ProfilePage() {
       }));
     } catch (error) {
       console.error('Profile update error:', error);
-      setMessage({ 
-        type: 'error', 
-        text: error.message || 'Failed to update profile. Please try again.' 
-      });
+      setError(error.message || 'Failed to update profile. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -262,7 +261,11 @@ export default function ProfilePage() {
                 />
               </div>
               {error && <div className="text-red-500 text-sm">{error}</div>}
-              {message && <div className="text-green-600 text-sm">{message}</div>}
+              {message.text && (
+                <div className={`text-sm ${message.type === 'success' ? 'text-green-600' : 'text-red-500'}`}>
+                  {message.text}
+                </div>
+              )}
               <div className="flex gap-2 mt-4">
                 <button type="button" onClick={() => setShowEdit(false)} className="flex-1 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold">Cancel</button>
                 <button type="submit" disabled={loading} className="flex-1 py-2 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-600 transition-all duration-200">{loading ? 'Saving...' : 'Save'}</button>
@@ -364,7 +367,11 @@ export default function ProfilePage() {
                 />
               </div>
               {error && <div className="text-red-500 text-sm">{error}</div>}
-              {message && <div className="text-green-600 text-sm">{message}</div>}
+              {message.text && (
+                <div className={`text-sm ${message.type === 'success' ? 'text-green-600' : 'text-red-500'}`}>
+                  {message.text}
+                </div>
+              )}
               <div className="flex gap-2 mt-4">
                 <button type="button" onClick={() => setShowPassword(false)} className="flex-1 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold">Cancel</button>
                 <button type="submit" disabled={loading} className="flex-1 py-2 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-600 transition-all duration-200">{loading ? 'Saving...' : 'Change'}</button>
